@@ -1,7 +1,10 @@
+import csv
+
 # this class describes the data structure behind the rainbow table
 # usage:
 # r = RainbowTable()  # creates a rainbow table
 # r.load('../test.csv')  # loads rainbow table from file
+
 
 class RainbowTable:
 
@@ -50,13 +53,28 @@ class RainbowTable:
         save the current dictionary as CSV file
         :param filename: where to store the file
         """
-        # TODO: save as CSV
-        pass
+
+        try:
+            with open(filename, 'w') as csvfile:
+                writer = csv.writer(csvfile)
+                for item in self.table.items():
+                    writer.writerow(item)
+        except IOError:
+            print("I/O error")
 
     def load(self, filename: str):
         """
         load a dictionary from a CSV file into this rainbow table object
         :param filename: the filename of the CSV file
         """
-        # TODO: populate table from CSV
-        pass
+
+        try:
+            with open(filename, 'r') as csvfile:
+                self.table.clear()
+
+                reader = csv.reader(csvfile)
+                for item in reader:
+                    self.put(item[0], item[1])
+                print(self.table)
+        except IOError:
+            print("I/O error")
