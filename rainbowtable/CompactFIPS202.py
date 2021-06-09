@@ -102,3 +102,39 @@ def SHA3_384(inputBytes):
 
 def SHA3_512(inputBytes):
     return Keccak(576, 1024, inputBytes, 0x06, 512//8)
+
+# If executed directly, runs a comparison in runtime between different SHA-3 hashes.
+if __name__ == "__main__":
+    import random
+    import string
+    import time
+
+    # Generate a few random strings.
+    str_length = 20
+    str_count = 10**5
+    print(f"Compare hashing of {str_count} strings with {str_length} chars each")
+
+    strings = []
+    for _ in range(str_count):
+        strings.append(
+            bytes(
+                ''.join(random.choices(string.ascii_uppercase + string.digits, k=str_length)),
+                'ascii'
+            )
+        )
+
+    # SHA3-512
+    start = time.time()
+    for plaintext in strings:
+        SHA3_512(plaintext)
+    end = time.time()
+
+    print(f"SHA3-512 {end - start}s")
+
+    # SHA3-256
+    start = time.time()
+    for plaintext in strings:
+        SHA3_256(plaintext)
+    end = time.time()
+
+    print(f"SHA3-256 {end - start}s")
