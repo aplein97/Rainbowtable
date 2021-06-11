@@ -13,6 +13,7 @@
 def ROL64(a, n):
     return ((a >> (64-(n%64))) + (a << (n%64))) % (1 << 64)
 
+
 def KeccakF1600onLanes(lanes):
     R = 1
     for round in range(24):
@@ -38,11 +39,14 @@ def KeccakF1600onLanes(lanes):
                 lanes[0][0] = lanes[0][0] ^ (1 << ((1<<j)-1))
     return lanes
 
+
 def load64(b):
     return sum((b[i] << (8*i)) for i in range(8))
 
+
 def store64(a):
     return list((a >> (8*i)) % 256 for i in range(8))
+
 
 def KeccakF1600(state):
     lanes = [[load64(state[8*(x+5*y):8*(x+5*y)+8]) for y in range(5)] for x in range(5)]
@@ -53,7 +57,8 @@ def KeccakF1600(state):
             state[8*(x+5*y):8*(x+5*y)+8] = store64(lanes[x][y])
     return state
 
-def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
+
+def Keccak(rate, capacity, inputBytes: bytearray, delimitedSuffix, outputByteLen: int):
     outputBytes = bytearray()
     state = bytearray([0 for i in range(200)])
     rateInBytes = rate//8
@@ -85,23 +90,30 @@ def Keccak(rate, capacity, inputBytes, delimitedSuffix, outputByteLen):
             state = KeccakF1600(state)
     return outputBytes
 
-def SHAKE128(inputBytes, outputByteLen):
+
+def SHAKE128(inputBytes, outputByteLen) -> bytearray:
     return Keccak(1344, 256, inputBytes, 0x1F, outputByteLen)
 
-def SHAKE256(inputBytes, outputByteLen):
+
+def SHAKE256(inputBytes, outputByteLen) -> bytearray:
     return Keccak(1088, 512, inputBytes, 0x1F, outputByteLen)
 
-def SHA3_224(inputBytes):
+
+def SHA3_224(inputBytes: bytearray) -> bytearray:
     return Keccak(1152, 448, inputBytes, 0x06, 224//8)
 
-def SHA3_256(inputBytes):
+
+def SHA3_256(inputBytes: bytearray) -> bytearray:
     return Keccak(1088, 512, inputBytes, 0x06, 256//8)
 
-def SHA3_384(inputBytes):
+
+def SHA3_384(inputBytes: bytearray) -> bytearray:
     return Keccak(832, 768, inputBytes, 0x06, 384//8)
 
-def SHA3_512(inputBytes):
+
+def SHA3_512(inputBytes: bytearray) -> bytearray:
     return Keccak(576, 1024, inputBytes, 0x06, 512//8)
+
 
 # If executed directly, runs a comparison in runtime between different SHA-3 hashes.
 if __name__ == "__main__":
