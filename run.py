@@ -2,7 +2,6 @@ import hashlib
 import random
 import string
 import time
-from multiprocessing import freeze_support
 
 from rainbowtable import RainbowTable, reduction_function1, reduction_function2, reduction_function3
 
@@ -27,21 +26,21 @@ def generate_plaintext() -> str:
     return ''.join(random.choices(string.ascii_lowercase, k=length))
 
 
-def test_fill(concurrency: bool) -> RainbowTable:
+def test_fill(concurrent: bool) -> RainbowTable:
     start = time.time()
-    r = RainbowTable(iterations=iterations, reduction_fn=reduction_fn, hash_fn=hash_fn, concurrency=concurrency)
-    r.fill(rows=rows, generator_fn=generate_plaintext)
+    r = RainbowTable(iterations=iterations, reduction_fn=reduction_fn, hash_fn=hash_fn)
+    r.fill(rows=rows, generator_fn=generate_plaintext, concurrent=concurrent)
     end = time.time()
-    print("Finished filling {} rows in {:0.3f} seconds (parallel={})".format(rows, end - start, concurrency))
+    print("Finished filling {} rows in {:0.3f} seconds (parallel={})".format(rows, end - start, concurrent))
     return r
 
 
-def test_load(concurrency: bool) -> RainbowTable:
+def test_load() -> RainbowTable:
     start = time.time()
-    r = RainbowTable(iterations=iterations, reduction_fn=reduction_fn, hash_fn=hash_fn, concurrency=concurrency)
+    r = RainbowTable(iterations=iterations, reduction_fn=reduction_fn, hash_fn=hash_fn)
     r.load('test.csv')
     end = time.time()
-    print("Finished filling {} rows in {:0.3f} seconds (parallel={})".format(rows, end - start, concurrency))
+    print("Finished filling {} rows in {:0.3f} seconds".format(rows, end - start))
     return r
 
 
@@ -55,19 +54,17 @@ def test_lookup(r: RainbowTable):
     print("Finished lookup in {:0.3f} seconds - found {} candidates".format(end - start, len(candidates)))
 
 
-def test_fill_and_lookup(concurrency: bool, save: bool = True):
-    r = test_fill(concurrency)
+def test_fill_and_lookup(concurrent: bool, save: bool = True):
+    r = test_fill(concurrent)
     if save:
         r.save('test.csv')
     test_lookup(r)
 
 
-def test_load_and_lookup(concurrency: bool):
-    r = test_load(concurrency)
+def test_load_and_lookup():
+    r = test_load()
     test_lookup(r)
 
 
 if __name__ == '__main__':
-    freeze_support()  # required for multiprocessing
-
-    test_fill_and_lookup(False)
+    test_fill_and_lookup(True)

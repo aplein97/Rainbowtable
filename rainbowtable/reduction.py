@@ -15,7 +15,7 @@ def reduction_function1(hash_str: str, length: int, index: int) -> str:
         raise ValueError('index must be greater or equal 0')
 
     # Convert hash from string into int
-    number = int(''.join(map(str, map(ord, hash))))
+    number = int(''.join(map(str, map(ord, hash_str))))
     number = (number + index) % 26**length
     result = ''
     for _ in range(0, length):

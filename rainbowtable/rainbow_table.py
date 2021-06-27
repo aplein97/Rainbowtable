@@ -2,7 +2,6 @@ import csv
 import multiprocessing
 import os
 import random
-import threading
 from typing import Callable, Dict, List
 
 
@@ -14,23 +13,13 @@ from typing import Callable, Dict, List
 
 class RainbowTable:
 
-    def __init__(self, iterations: int, reduction_fn: Callable[[str], str], hash_fn: Callable[[str], str], concurrency: bool = False):
-        self._concurrency = concurrency
-
+    def __init__(self, iterations: int, reduction_fn: Callable[[str], str], hash_fn: Callable[[str], str]):
         self._data: Dict[str, List[str]] = dict()
-        self._lock = threading.Lock()
 
         # rainbow table settings
         self._iterations = iterations
         self._reduction_fn = reduction_fn
         self._hash_fn = hash_fn
-
-    def _init_concurrency(self, m: multiprocessing.Manager):
-        assert self._concurrency is True
-
-        # initialize dict using the multiprocessing manager
-        self._data: Dict[str, List[str]] = m.dict(self._data)
-        self._lock = m.Lock()
 
     def _has(self, key: str) -> bool:
         """
@@ -54,14 +43,12 @@ class RainbowTable:
         :param key: last columns value of the row in the rainbow table
         :param value: the first columns value of the row in the rainbow table
         """
+        if key not in self._data:
+            self._data.update({key: [value]})
+        elif value not in self._data[key]:
+            self._data.update({key: [*self._data[key], value]})
 
-        with self._lock:
-            if key not in self._data:
-                self._data.update({key: [value]})
-            elif value not in self._data[key]:
-                self._data.update({key: [*self._data[key], value]})
-
-    def _calculate_row(self, initial_str: str, iterations: int) -> str:
+    def _calculate_row(self, initial_str: str) -> str:
         """
         calculate a row from an initial plaintext and return last column
         :param initial_str: the initial plaintext where the calculation starts
@@ -69,7 +56,7 @@ class RainbowTable:
         """
         key = initial_str
 
-        for i in range(0, iterations):
+        for i in range(0, self._iterations):
             hash_str = self._hash_fn(key)
             key = self._reduction_fn(hash_str)
 
@@ -79,8 +66,7 @@ class RainbowTable:
         """
         clears the data structure, emptying the rainbow table
         """
-        with self._lock:
-            self._data.clear()
+        self._data.clear()
 
     def save(self, filename: str):
         """
@@ -103,29 +89,18 @@ class RainbowTable:
         :param filename: the filename of the CSV file
         """
 
-        with self._lock:
-            try:
-                with open(filename, 'r') as csv_file:
-                    self._data.clear()
+        try:
+            with open(filename, 'r') as csv_file:
+                self._data.clear()
 
-                    reader = csv.reader(csv_file)
-                    for item in reader:
-                        self._put(item[1], item[0])
-            except IOError:
-                print("I/O error")
-
-    def add_row(self, initial_str: str):
-        """
-        Calculates and adds a row based on the initial plaintext
-        :param initial_str: the initial plaintext where the calculation starts
-        :param m: a multiprocessing manager
-        """
-        last_column = self._calculate_row(initial_str, self._iterations)
-        self._put(last_column, initial_str)
+                reader = csv.reader(csv_file)
+                for item in reader:
+                    self._put(item[1], item[0])
+        except IOError:
+            print("I/O error")
 
     def get_random_plaintext(self):
-        with self._lock:
-            choices = [item for sublist in self._data.values() for item in sublist]
+        choices = [item for sublist in self._data.values() for item in sublist]
 
         value = random.choice(choices)
 
@@ -167,19 +142,45 @@ class RainbowTable:
 
         return candidates
 
-    def fill(self, rows: int, generator_fn: Callable[[], str]):
-        if self._concurrency:
-            cpu_count = os.cpu_count() or 1
-            m = multiprocessing.Manager()
-            self._init_concurrency(m)
-            pool = multiprocessing.Pool()
-            pool.apply(self._fill, (rows % cpu_count, generator_fn))
-            pool.starmap(self._fill, [(rows // cpu_count, generator_fn) for _ in range(0, cpu_count)])
-            pool.close()
-            pool.join()
+    def fill(self, rows: int, generator_fn: Callable[[], str], concurrent: bool = False):
+        """
+        generates and calculates rows (of given count), using the given password candidate generator fn
+        :param rows: the count of rows to generate
+        :param generator_fn: a function which generates password candidates
+        :param concurrent: whether to use multiprocessing
+        """
+
+        if concurrent:
+            self._fill_multiprocessing(rows, generator_fn)
         else:
             self._fill(rows, generator_fn)
 
+    def _fill_multiprocessing(self, rows: int, generator_fn: Callable[[], str]):
+        """
+        generates and calculates rows (of given count), using the given password candidate generator fn
+        this method uses multiprocessing
+        :param rows: the count of rows to generate
+        :param generator_fn: a function which generates password candidates
+        """
+
+        with multiprocessing.Pool(processes=os.cpu_count()) as pool:
+            words = [generator_fn() for _ in range(0, rows)]
+            results = pool.map(self._calculate_row, words)
+            pool.close()
+            pool.join()
+
+            for i in range(0, rows):
+                self._put(results[i], words[i])
+
     def _fill(self, rows: int, generator_fn: Callable[[], str]):
+        """
+        generates and calculates rows (of given count), using the given password candidate generator fn
+        this method doesn't use multiprocessing
+        :param rows: the count of rows to generate
+        :param generator_fn: a function which generates password candidates
+        """
+
         for _ in range(0, rows):
-            self.add_row(generator_fn())
+            word = generator_fn()
+            result = self._calculate_row(word)
+            self._put(result, word)
