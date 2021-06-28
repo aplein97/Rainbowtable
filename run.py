@@ -11,7 +11,7 @@ iterations = 1000
 rows = 1000
 
 
-def reduction_fn(hash_str: str, index: int = 0) -> str:
+def reduction_fn(hash_str: str, index: int) -> str:
     return reduction_function1(hash_str=hash_str, length=length, index=index)
     # return reduction_function2(hash_str=hash_str, length=length, index=index)
     # return reduction_function3(hash_str=hash_str, length=length, index=index)

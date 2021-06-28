@@ -13,7 +13,7 @@ from typing import Callable, Dict, List
 
 class RainbowTable:
 
-    def __init__(self, iterations: int, reduction_fn: Callable[[str], str], hash_fn: Callable[[str], str]):
+    def __init__(self, iterations: int, reduction_fn: Callable[[str, int], str], hash_fn: Callable[[str], str]):
         self._data: Dict[str, List[str]] = dict()
 
         # rainbow table settings
@@ -56,9 +56,9 @@ class RainbowTable:
         """
         key = initial_str
 
-        for i in range(0, self._iterations):
+        for i in range(1, self._iterations):
             hash_str = self._hash_fn(key)
-            key = self._reduction_fn(hash_str)
+            key = self._reduction_fn(hash_str, i)
 
         return key
 
@@ -104,9 +104,9 @@ class RainbowTable:
 
         value = random.choice(choices)
 
-        for i in range(0, random.randint(0, self._iterations)):
+        for i in range(1, random.randint(0, self._iterations - 1)):
             hash_str = self._hash_fn(value)
-            value = self._reduction_fn(hash_str)
+            value = self._reduction_fn(hash_str, i)
 
         return value
 
@@ -119,19 +119,29 @@ class RainbowTable:
 
         candidates = []
 
+        # iterate through columns
+        for i in range(self._iterations - 1, 0, -1):
+            candidates += self._lookup_for_iteration(hash_str, i)
+
+        return candidates
+
+    def _lookup_for_iteration(self, hash_str: str, iteration: int) -> List[str]:
+        """
+        try to lookup the row containing the given hash
+        this method assumes that the reduction of the given hash is the column of the given iteration
+        """
+        candidates = []
         tmp_hash_str = hash_str
 
-        # iterate through columns
-        for i in range(self._iterations - 1, -1, -1):
-            # reduce hash
-            tmp = self._reduction_fn(tmp_hash_str)
+        for i in range(iteration, self._iterations):
+            tmp = self._reduction_fn(tmp_hash_str, i)
 
             # iterate through all found rows
             for value in self._get(tmp):
 
                 # calculate reductions until correct column
-                for j in range(0, i):
-                    value = self._reduction_fn(self._hash_fn(value))
+                for j in range(1, iteration):
+                    value = self._reduction_fn(self._hash_fn(value), j)
 
                 # verify match and add it to candidates list
                 if hash_str == self._hash_fn(value) and value not in candidates:

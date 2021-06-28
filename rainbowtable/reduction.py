@@ -16,7 +16,7 @@ def reduction_function1(hash_str: str, length: int, index: int) -> str:
 
     # Convert hash from string into int
     number = int(''.join(map(str, map(ord, hash_str))))
-    number = (number + index) % 26**length
+    number = (number + index) % 26 ** length
     result = ''
     for _ in range(0, length):
         result += chr((number % 26) + ord('a'))
