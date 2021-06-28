@@ -8,7 +8,7 @@ from rainbowtable import RainbowTable, reduction_function1, reduction_function2,
 
 length = 6
 iterations = 1000
-rows = 1000
+rows = 10000
 
 
 def reduction_fn(hash_str: str, index: int) -> str:
@@ -18,7 +18,8 @@ def reduction_fn(hash_str: str, index: int) -> str:
 
 
 def hash_fn(plain_str: str) -> str:
-    return hashlib.md5(plain_str.encode('ascii')).hexdigest()[:length]
+    return hashlib.sha3_224(plain_str.encode('ascii')).hexdigest()[:length]
+    # return hashlib.md5(plain_str.encode('ascii')).hexdigest()[:length]
     # return hashlib.md5(plain_str.encode('ascii')).hexdigest()
 
 
