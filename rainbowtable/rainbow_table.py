@@ -35,7 +35,10 @@ class RainbowTable:
         :param key: the key to search for in the last column
         :return: the values from the first column (may be empty)
         """
-        return self._data.get(key) or []
+        if key in self._data:
+            return self._data[key]
+        else:
+            return []
 
     def _put(self, key: str, value: str):
         """
