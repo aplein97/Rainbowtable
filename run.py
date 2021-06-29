@@ -2,11 +2,12 @@ import hashlib
 import random
 import string
 import time
+from typing import List
 
 from rainbowtable import RainbowTable, reduction_function1
 
 
-length = 4
+length = 8
 iterations = 1000
 rows = 100
 
@@ -23,6 +24,10 @@ def hash_fn(plain_str: str) -> str:
 
 def generate_plaintext() -> str:
     return ''.join(random.choices(string.ascii_lowercase, k=length))
+
+
+def load_wordlist(filename: str) -> List[str]:
+    return [word.strip() for word in open(filename, 'r').readlines()]
 
 
 def test_fill(concurrent: bool) -> RainbowTable:
@@ -67,6 +72,10 @@ def test_fill_and_lookup(concurrent: bool, save: bool = True):
 def test_load_and_lookup():
     r = test_load()
     test_lookup(r)
+
+
+def convert_wordlist(input_filename: str, output_filename: str):
+    open(output_filename, 'w').write('\n'.join(open(input_filename, 'r').readline().split(' ')))
 
 
 if __name__ == '__main__':
