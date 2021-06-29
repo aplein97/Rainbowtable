@@ -3,7 +3,7 @@ import random
 import string
 import time
 
-from rainbowtable import RainbowTable, reduction_function1, reduction_function2, reduction_function3
+from rainbowtable import RainbowTable, reduction_function1
 
 
 length = 6
@@ -13,8 +13,6 @@ rows = 10000
 
 def reduction_fn(hash_str: str, index: int) -> str:
     return reduction_function1(hash_str=hash_str, length=length, index=index)
-    # return reduction_function2(hash_str=hash_str, length=length, index=index)
-    # return reduction_function3(hash_str=hash_str, length=length, index=index)
 
 
 def hash_fn(plain_str: str) -> str:
