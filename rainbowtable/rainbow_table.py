@@ -155,45 +155,40 @@ class RainbowTable:
 
         return candidates
 
-    def fill(self, rows: int, generator_fn: Callable[[], str], concurrent: bool = False):
+    def fill(self, wordlist: List[str], concurrent: bool = False):
         """
         generates and calculates rows (of given count), using the given password candidate generator fn
-        :param rows: the count of rows to generate
-        :param generator_fn: a function which generates password candidates
+        :param wordlist: list of plaintexts
         :param concurrent: whether to use multiprocessing
         """
 
         if concurrent:
-            self._fill_multiprocessing(rows, generator_fn)
+            self._fill_multiprocessing(wordlist)
         else:
-            self._fill(rows, generator_fn)
+            self._fill(wordlist)
 
-    def _fill_multiprocessing(self, rows: int, generator_fn: Callable[[], str]):
+    def _fill_multiprocessing(self, wordlist: List[str]):
         """
         generates and calculates rows (of given count), using the given password candidate generator fn
         this method uses multiprocessing
-        :param rows: the count of rows to generate
-        :param generator_fn: a function which generates password candidates
+        :param wordlist: list of plaintexts
         """
 
         with multiprocessing.Pool(processes=os.cpu_count()) as pool:
-            words = [generator_fn() for _ in range(0, rows)]
-            results = pool.map(self._calculate_row, words)
+            results = pool.map(self._calculate_row, wordlist)
             pool.close()
             pool.join()
 
-            for i in range(0, rows):
-                self._put(results[i], words[i])
+            for i, word in enumerate(wordlist):
+                self._put(results[i], word)
 
-    def _fill(self, rows: int, generator_fn: Callable[[], str]):
+    def _fill(self, wordlist: List[str]):
         """
         generates and calculates rows (of given count), using the given password candidate generator fn
         this method doesn't use multiprocessing
-        :param rows: the count of rows to generate
-        :param generator_fn: a function which generates password candidates
+        :param wordlist: list of plaintexts
         """
 
-        for _ in range(0, rows):
-            word = generator_fn()
+        for word in wordlist:
             result = self._calculate_row(word)
             self._put(result, word)

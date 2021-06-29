@@ -6,9 +6,9 @@ import time
 from rainbowtable import RainbowTable, reduction_function1
 
 
-length = 6
+length = 4
 iterations = 1000
-rows = 10000
+rows = 100
 
 
 def reduction_fn(hash_str: str, index: int) -> str:
@@ -26,11 +26,15 @@ def generate_plaintext() -> str:
 
 
 def test_fill(concurrent: bool) -> RainbowTable:
-    start = time.time()
+    wordlist = [generate_plaintext() for _ in range(0, rows)]
     r = RainbowTable(iterations=iterations, reduction_fn=reduction_fn, hash_fn=hash_fn)
-    r.fill(rows=rows, generator_fn=generate_plaintext, concurrent=concurrent)
+
+    start = time.time()
+    r.fill(wordlist=wordlist, concurrent=concurrent)
     end = time.time()
+
     print("Finished filling {} rows in {:0.3f} seconds (parallel={})".format(rows, end - start, concurrent))
+
     return r
 
 
