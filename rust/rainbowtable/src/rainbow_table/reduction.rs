@@ -6,7 +6,7 @@ use num::{BigUint, FromPrimitive, Integer, ToPrimitive};
 
 custom_error! {pub ReductionError
   Format{source: ParseBigIntError} = "some input is of invalid format",
-  Other = "something else went wrong"
+  Other{message: String} = "{message}"
 }
 
 /// A function to reduce a given hash to a plaintext password of the given length.
@@ -32,7 +32,7 @@ pub fn reduction_function1(
     let num_26 = match BigUint::from_i32(26) {
         Some(n) => n,
         // This shouldn't possibly happen.
-        None => return Err(ReductionError::Other),
+        None => return Err(ReductionError::Other{message: "26 into bigint failed".into()}),
     };
     let mut number = step_n + index % num_26.pow(length);
 
@@ -46,11 +46,11 @@ pub fn reduction_function1(
         // ord('a') == 97
         let codepoint = match (remainder + 97u32).to_u32() {
             Some(u) => u,
-            None => return Err(ReductionError::Other),
+            None => return Err(ReductionError::Other{message: "codepoint error".into()}),
         };
         let char = match char::from_u32(codepoint) {
             Some(char) => char,
-            None => return Err(ReductionError::Other),
+            None => return Err(ReductionError::Other{message: "char from codepoint failed".into()}),
         };
         result = result.add(&char.to_string());
         number = quotient;
