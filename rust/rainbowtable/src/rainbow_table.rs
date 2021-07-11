@@ -60,6 +60,32 @@ impl RainbowTable {
         Ok(())
     }
 
+    /// Loads a rainbow table from a CSV file into this instance.
+    pub fn load_from_file(&mut self, path: &str) -> Result<(), csv::Error> {
+      let mut rdr = csv::ReaderBuilder::new()
+        .has_headers(false)
+        .from_path(path)?;
+
+      self.table.clear();
+      for result in rdr.records() {
+          let record = result?;
+          self.table.insert(String::from(&record[1]), String::from(&record[0]));
+      }
+
+      Ok(())
+    }
+
+    /// Saves the current rainbow table as a CSV file at the given path.
+    pub fn save_to_file(&self, path: &str) -> Result<(), csv::Error> {
+        let mut wtr = csv::Writer::from_path(path)?;
+        for (last_column, first_column) in self.table.iter() {
+            wtr.write_record(&csv::StringRecord::from(vec![first_column, last_column]))?
+        }
+
+        wtr.flush()?;
+        Ok(())
+    }
+
     pub fn get_chain_count(&self) -> usize {
         return self.table.len();
     }
