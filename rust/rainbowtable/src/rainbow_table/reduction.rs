@@ -32,7 +32,11 @@ pub fn reduction_function1(
     let num_26 = match BigUint::from_i32(26) {
         Some(n) => n,
         // This shouldn't possibly happen.
-        None => return Err(ReductionError::Other{message: "26 into bigint failed".into()}),
+        None => {
+            return Err(ReductionError::Other {
+                message: "26 into bigint failed".into(),
+            })
+        }
     };
     let mut number = step_n + index % num_26.pow(length);
 
@@ -46,11 +50,19 @@ pub fn reduction_function1(
         // ord('a') == 97
         let codepoint = match (remainder + 97u32).to_u32() {
             Some(u) => u,
-            None => return Err(ReductionError::Other{message: "codepoint error".into()}),
+            None => {
+                return Err(ReductionError::Other {
+                    message: "codepoint error".into(),
+                })
+            }
         };
         let char = match char::from_u32(codepoint) {
             Some(char) => char,
-            None => return Err(ReductionError::Other{message: "char from codepoint failed".into()}),
+            None => {
+                return Err(ReductionError::Other {
+                    message: "char from codepoint failed".into(),
+                })
+            }
         };
         result = result.add(&char.to_string());
         number = quotient;

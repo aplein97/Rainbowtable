@@ -6,7 +6,7 @@ use reduction::ReductionError;
 use std::{collections::HashMap, fmt};
 
 #[derive(Debug)]
-struct InvalidMatchDetails {
+pub struct InvalidMatchDetails {
     hash: String,
     iteration: u32,
     first_column: String,
@@ -26,9 +26,9 @@ custom_error! {pub LookupError
     Other{message: String} = "{message}",
 }
 
-pub type HashFunc = fn(&str) -> String;
+pub type HashFunc = Box<dyn Fn(&str) -> String + Sync>;
 
-pub type ReductionFunc = fn(&str, u32) -> Result<String, ReductionError>;
+pub type ReductionFunc = Box<dyn Fn(&str, u32) -> Result<String, ReductionError> + Sync>;
 
 pub struct RainbowTable {
     /// Each chain will be calculated using the reduction function R_i with R_1..R_(iterations - 1)
@@ -51,12 +51,12 @@ impl RainbowTable {
             table: HashMap::new(),
             iterations,
             hash_func,
-            reduction_func,
+            reduction_func: reduction_func,
         }
     }
 
     /// Generates a chain for each word in the given wordlist and stores it into the rainbow table.
-    pub fn fill(&mut self, wordlist: &[String]) -> Result<(), ReductionError> {
+    pub fn _fill(&mut self, wordlist: &[String]) -> Result<(), ReductionError> {
         for word in wordlist {
             let last_column = self.calc_chain(word)?;
             self.table.insert(last_column, word.to_string());
