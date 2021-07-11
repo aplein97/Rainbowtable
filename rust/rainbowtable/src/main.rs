@@ -75,8 +75,7 @@ fn main() {
     let elapsed = start.elapsed().as_secs_f64();
 
     match result {
-        Ok(Some(candidate)) => println!("Found plaintext {} for hash {} in {}s", &candidate, &hash, elapsed),
-        Ok(None) => println!("Found no plaintext for hash {} in {}s", &hash, elapsed),
-        Err(err) => println!("Lookup failed: {}", err)
+        Some(candidate) => println!("Found plaintext {} for hash {} in {}s", &candidate, &hash, elapsed),
+        None => println!("Found no plaintext for hash {} in {}s", &hash, elapsed),
     }
 }
