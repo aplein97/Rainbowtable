@@ -3,17 +3,26 @@ pub mod reduction;
 use custom_error::custom_error;
 use rayon::prelude::*;
 use reduction::ReductionError;
-use std::collections::HashMap;
+use std::{collections::HashMap, fmt};
+
+#[derive(Debug)]
+struct InvalidMatchDetails {
+    hash: String,
+    iteration: u32,
+    first_column: String,
+    last_column: String,
+    plaintext: String,
+}
+
+impl fmt::Display for InvalidMatchDetails {
+    fn fmt(&self, f: &mut fmt::Formatter) -> fmt::Result {
+        write!(f, "{:?}", self)
+    }
+}
 
 custom_error! {pub LookupError
     ReductionError{source: ReductionError} = "{source}",
-    InvalidMatch{
-        hash: String,
-        iteration: u32,
-        first_column: String,
-        last_column: String,
-        plaintext: String
-    } = "found matching hash {} at iteration {} in chain ({}, {}) but validation of plaintext {plaintext} failed",
+    InvalidMatch{details: InvalidMatchDetails} = "found matching hash in a chain but validation failed: {}",
     Other{message: String} = "{message}",
 }
 
@@ -101,19 +110,22 @@ impl RainbowTable {
     }
 
     /// Searches the rainbow table for a plaintext matching the given hash value.
-    pub fn lookup(&self, hash_str: &str) -> Result<Option<String>, LookupError> {
-        for i in (1..self.iterations).rev() {
+    pub fn lookup(&self, hash_str: &str) -> Option<String> {
+        // Start the different iteration lookups in parallel and abort as soon as one match was
+        // found.
+        (1..self.iterations).rev().par_bridge().find_map_any(|i| {
             match self.lookup_for_iteration(hash_str, i) {
-                Ok(Some(candidate)) => return Ok(Some(candidate)),
-                Ok(None) => continue,
-                Err(_) => {
-                    // println!("Lookup error: {}. Continuing ...", err);
-                    continue;
+                Ok(Some(candidate)) => Some(candidate),
+                Ok(None) => None,
+                // Ignore invalid matches.
+                Err(LookupError::InvalidMatch { details: _ }) => None,
+                Err(err) => {
+                    // TODO: Returning the error would probably be better.
+                    println!("Lookup error: {}", err);
+                    None
                 }
             }
-        }
-
-        Ok(None)
+        })
     }
 
     /// Checks whether the given hash is at the column of the rainbow table specified by the given
@@ -147,11 +159,13 @@ impl RainbowTable {
                     Ok(Some(plaintext))
                 } else {
                     Err(LookupError::InvalidMatch {
-                        hash: hash_str.into(),
-                        iteration: iteration,
-                        first_column: first_column.into(),
-                        last_column: tmp_reduced_str.into(),
-                        plaintext: plaintext.into(),
+                        details: InvalidMatchDetails {
+                            hash: hash_str.into(),
+                            iteration: iteration,
+                            first_column: first_column.into(),
+                            last_column: tmp_reduced_str.into(),
+                            plaintext: plaintext.into(),
+                        },
                     })
                 }
             }
